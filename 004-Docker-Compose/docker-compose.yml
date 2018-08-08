@@ -1,0 +1,55 @@
+version: '2'
+
+services:
+
+    ############################################################################
+    # Nginx Load Balancer
+    # proxy server that works with out application (php7-fpm/mysql/nginx/memcached)
+    ############################################################################
+    nginxlb:
+        build: ./dockerfiles/nginx
+        image: devops/nginx:1.15.2
+        ports:
+            - "80:80"
+        mem_limit: 1024m
+        volumes:
+            - ./www-root/:/var/www/html/
+            - ./nginx.conf:/etc/nginx/nginx.conf:ro
+        links:
+            - php
+
+    ############################################################################
+    # PHP 7.1 FPM
+    ############################################################################
+    php:
+        build: ./dockerfiles/php
+        image: devops/php:7.2.6
+        mem_limit: 1024m
+        volumes:
+            - ./www-root:/var/www/html/
+        links:
+            - memcached
+            - mysql
+
+
+    ############################################################################
+    # MySQL 5.7.17
+    ############################################################################
+    mysql:
+        image: mysql:5.7
+        mem_limit: 1024m
+        volumes:
+            - ./db-mysql:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: rootpassword
+            MYSQL_USER: simpleuser
+            MYSQL_PASSWORD: password
+
+    ###########################################################################
+    # Memcached
+    ###########################################################################
+    memcached:
+        build: ./dockerfiles/memcached
+        image: devops/memcached:1.5.7
+        mem_limit: 512m
+        command: memcached -m 512m
