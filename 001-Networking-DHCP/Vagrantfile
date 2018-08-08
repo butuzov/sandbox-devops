@@ -1,0 +1,50 @@
+Vagrant.configure("2") do |config|
+
+    config.vm.box              = "centos/7"
+    config.vm.box_check_update = false
+
+    config.vm.provider 'virtualbox' do |box|
+        box.cpus   = 1
+        box.memory = "512"
+    end
+
+    config.vm.provision :shell,
+        :preserve_order => true,
+        :inline         => "echo $(hostname -a); echo $(hostname -I)"
+
+    config.vm.define :server do |box|
+        box.vm.hostname         = "dhcp"
+
+        box.vm.network :private_network,
+           :ip                  => "192.168.60.4",
+           :virtualbox__intnet  => true
+
+        box.vm.provision :shell,
+            :preserve_order     => true,
+            :inline             => <<-SCRIPT
+                sudo yum install -y dhcp tcpdump > /dev/null 2>&1
+                sudo cp /vagrant/dhcp.conf /etc/dhcp/dhcpd.conf
+                sudo systemctl start dhcpd
+            SCRIPT
+    end
+
+
+    config.vm.define :client_mac do |box|
+        box.vm.hostname         = "dhcp-client-mac"
+
+        box.vm.network :private_network,
+            :type               => "dhcp",
+            :mac                => "5CA1AB1E0001",
+            :virtualbox__intnet => true
+    end
+
+
+    config.vm.define :client_dyn_ip do |box|
+        box.vm.hostname         = "dhcp-client-ip"
+
+        box.vm.network :private_network,
+            :type               => "dhcp",
+            :virtualbox__intnet => true
+    end
+
+end
