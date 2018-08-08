@@ -1,0 +1,19 @@
+$ORIGIN .
+$TTL 5M
+0.168.192.in-addr.arpa IN SOA	vanilla.com. abuse.vanilla.com. (
+					20080423	; serial
+					1D      	; refresh
+					1H      	; retry
+					1W	        ; expire
+					3H )        ; minimum
+
+				NS      master.vanilla.com.
+				NS      puppet.vanilla.com.
+				PTR     vanilla.com.
+
+$ORIGIN 0.168.192.in-addr.arpa.
+; Hosts in this Domain
+17              PTR     master.vanilla.com.
+18              PTR     puppet.vanilla.com.
+master          A       192.168.0.17
+puppet          A       192.168.0.18

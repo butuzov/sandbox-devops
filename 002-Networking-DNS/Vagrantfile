@@ -1,0 +1,41 @@
+Vagrant.configure("2") do |config|
+
+    config.vm.box              = "centos/7"
+    config.vm.box_check_update = false
+
+    config.vm.provider 'virtualbox' do |box|
+        box.cpus   = 1
+        box.memory = "512"
+    end
+
+    config.vm.provision "shell",
+        :path => "install-tools.sh"
+
+    config.vm.define :master do |box|
+        box.vm.hostname         = "master"
+
+        box.vm.network :private_network,
+            :ip   => "192.168.0.17",
+            :type => "dhcp"
+
+        box.vm.provision :shell,
+            :path           => "install-dns.sh",
+            :args           => "master",
+            :preserve_order => true
+    end
+
+
+    config.vm.define :puppet do |box|
+        box.vm.hostname         = "puppet"
+        box.vm.network :private_network,
+            :ip             => "192.168.0.18",
+            :type           => "dhcp"
+
+        box.vm.provision :shell,
+            :path           => "install-dns.sh",
+            :args           => "slave",
+            :preserve_order => true
+    end
+
+
+end

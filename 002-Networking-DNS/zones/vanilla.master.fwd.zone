@@ -1,0 +1,19 @@
+$TTL 5M
+@	IN SOA	master.vanilla.com. abuse.vanilla.com. (
+					20080423	; serial
+					1D      	; refresh
+					1H      	; retry
+					1W	        ; expire
+					3H )        ; minimum
+
+@       IN      NS      master.vanilla.com.
+@       IN      NS      puppet.vanilla.com.
+@       IN      PTR     vanilla.com.
+
+; Name server hostname to IP resolve.
+@       IN      A       192.168.0.17
+@       IN      A       192.168.0.18
+
+; Hosts in this Domain
+master  IN      A       192.168.0.17
+puppet  IN      A       192.168.0.18

@@ -1,0 +1,18 @@
+$ORIGIN .
+$TTL 5M
+vanilla.com IN SOA	vanilla.com. abuse.vanilla.com. (
+					20080423	; serial
+					1D      	; refresh
+					1H      	; retry
+					1W	        ; expire
+					3H )        ; minimum
+
+				NS      master.vanilla.com.
+				NS      puppet.vanilla.com.
+				A       192.168.0.17
+				A       192.168.0.18
+
+$ORIGIN vanilla.com.
+; Hosts in this Domain
+master  IN      A       192.168.0.17
+puppet  IN      A       192.168.0.18 
