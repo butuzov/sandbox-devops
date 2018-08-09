@@ -1,0 +1,15 @@
+[all:vars]
+ansible_connection=ssh
+ansible_host=127.0.0.1
+
+
+
+[ubuntu:vars]
+ansible_python_interpreter=/usr/bin/python3
+
+[ubuntu]
+ubuntu-lb        ansible_port=2222
+ubuntu-app-1     ansible_port=2200
+ubuntu-app-2     ansible_port=2201
+ubuntu-db-master ansible_port=2202
+ubuntu-db-slave  ansible_port=2203

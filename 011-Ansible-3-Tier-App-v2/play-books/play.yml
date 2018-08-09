@@ -1,0 +1,45 @@
+---
+- name: "Startup"
+  hosts: all
+  become: True
+  roles: [ 'ip' ]
+
+  vars:
+    environments: [ staging, production ]
+    env: staging
+
+  vars_files:
+  - vars/defaults.yml
+
+# Preloading Variables for Deployment.
+  pre_tasks:
+  - name: Checking incoming env var
+    fail: { msg : "Allowed env value is: {{ environments | join( ' or ' ) }} " }
+    when: env not in [ 'staging', 'production' ]
+
+  - name: Retriving Deployment Settings
+    include_vars: { file: "{{ item }}", name: env_settings }
+    with_first_found:
+    - vars/deployment-{{env}}.yml
+    ignore_errors: True
+
+  - debug: { var : settings }
+
+  - set_fact: { settings : "{{ settings | combine(env_settings) }}" }
+
+  # - debug: { var : settings }
+# Extra Roles
+- name: "Database"
+  hosts: "*-db-*"
+  roles: [ 'db' ]
+  become: True
+
+- name: "Backend"
+  hosts: "*-app-*"
+  roles: [ 'app' ]
+  become: True
+
+- name: "Load Balancers"
+  hosts: "*-lb"
+  roles: [ 'lb' ]
+  become: True

@@ -1,0 +1,22 @@
+---
+settings:
+  domain: dev.made.com.ua
+
+  env_vars:
+    env: "{{env | upper}}"
+
+  db:
+    name: 'visits'
+    root_password: '-f3G3nQeB3T7eB#D'
+
+  ssl: on
+
+  localhost_certs:
+    ssl_certificate:     files/apache.crt
+    ssl_certificate_key: files/apache.key
+
+  nginx_certs:
+    ssl_certificate:     files/made.com.ua.crt
+    ssl_certificate_key: files/made.com.ua.key
+    ssl_dhparam:         files/made.com.ua.dh.pem
+

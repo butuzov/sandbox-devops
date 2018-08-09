@@ -1,0 +1,6 @@
+---
+# Installing latest epel release of nginx
+- name: Nginx Installation (yum)
+  yum: { name: nginx, state: present, enablerepo: epel }
+  notify:
+  - nginx service cluster

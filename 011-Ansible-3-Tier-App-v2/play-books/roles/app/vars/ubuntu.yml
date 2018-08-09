@@ -1,0 +1,6 @@
+---
+# this is conf default for Ubuntu
+servicename: apache2
+
+site_conf_root: /etc/apache2/sites-enabled/
+

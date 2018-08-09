@@ -1,0 +1,12 @@
+---
+# enable nginx as service
+- name: mysql_service_cluster_start
+  service: { name: "{{ db_settings.service}}", enabled: yes }
+  notify: [ 'mysql start' ]
+
+- name: mysql start
+  service: { name: "{{ db_settings.service}}", state: started }
+
+# restrts nginx with new configuration
+- name: mysql restart
+  service: { name : "{{ db_settings.service}}", state : restarted }

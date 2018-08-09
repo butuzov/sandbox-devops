@@ -1,0 +1,6 @@
+---
+# this is conf default for CentOS
+servicename: httpd
+
+site_conf_root: /etc/httpd/conf.d/
+

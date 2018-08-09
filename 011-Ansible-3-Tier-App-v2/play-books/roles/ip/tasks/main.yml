@@ -1,0 +1,12 @@
+---
+- name: Generate IP Fact (IP Fact Not Exists)
+  include_tasks: generate_ip_fact.yml
+  when: ansible_facts.ansible_local.ip is not defined
+
+- name: Generate IP Fact (IP Changed)
+  include_tasks: generate_ip_fact.yml
+  when: ansible_facts.ansible_local.ip not in ansible_facts.all_ipv4_addresses
+
+# - name: Generate IP Fact
+#   debug: { msg : "{{ inventory_hostname }} - {{ ansible_facts.ansible_local.ip }}" }
+#   when: ansible_facts.ansible_local.ip is defined

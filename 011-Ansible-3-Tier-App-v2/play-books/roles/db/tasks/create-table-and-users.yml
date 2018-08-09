@@ -1,0 +1,22 @@
+- name: create db for app
+  mysql_db: { name: "{{settings.db.name}}", state: present }
+  register: dbname
+- debug : { var : dbname }
+
+- name: restore database (part 1 - copy sql dump)
+  copy: { src: "tables.sql" , dest: "/tmp/tables.sql" }
+  when: dbname.changed == True
+
+- name: restore database (part 2 - import sql dump)
+  mysql_db: { name: "{{settings.db.name}}", state: import, target: "/tmp/tables.sql" }
+  when: dbname.changed == True
+
+- mysql_user:
+    name : "{{ item.username }}"
+    host : "%"
+    priv: '*.*:ALL'
+    password : "{{ item.password }}"
+    state: present
+  with_items: "{{ db_settings.users | default([]) }}"
+  when: db_settings.users is defined
+  notify: [ 'mysql_service_cluster_start' ]

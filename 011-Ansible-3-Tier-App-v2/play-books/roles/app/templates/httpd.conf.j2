@@ -1,0 +1,18 @@
+
+ServerName localhost
+<VirtualHost *:443>
+
+SSLEngine on
+SSLCertificateFile 	"{{ apache.cert_root }}/{{ settings.localhost_certs.ssl_certificate | basename }}"
+SSLCertificateKeyFile "{{ apache.cert_root }}/{{ settings.localhost_certs.ssl_certificate_key | basename }}"
+
+
+	DocumentRoot {{ apache.html_root }}
+	DirectoryIndex index.php
+
+	<Directory "{{ apache.html_root }}">
+		Options +Indexes +FollowSymLinks
+		AllowOverride All
+		Require all granted
+	</Directory>
+</VirtualHost>

@@ -1,0 +1,62 @@
+Vagrant.configure("2") do |config|
+
+	# ~* Hosts *~ #
+	config.vm.synced_folder '', '/vagrant', disabled: true
+	config.vm.box_check_update = false
+
+	# counting IPs in private network
+	ip_counter = 10
+
+	envs = {
+		:centos => {
+			:box 	=> 'centos/7',
+			:memory => '512',
+			:port  =>  8080
+		},
+		:ubuntu => {
+			:box 	=> 'ubuntu/xenial64',
+			:memory => '512',
+			:port  =>  8081
+		},
+	}.each do |env, settings|
+
+		servers = [
+			'lb',
+			'app-1',
+			'app-2',
+			'db-master',
+			'db-slave',
+		]
+
+		servers.each do | server |
+			config.vm.define "#{env}-#{server}" do |box|
+
+				ip_counter += 1
+				box.vm.network "private_network",
+								# type: "dhcp"
+								ip: "172.28.128.#{ip_counter}"
+
+				if server == "lb"
+					box.vm.network :forwarded_port,
+						guest: 443,
+						host: settings.dig(:port)
+				end
+
+
+				box.vm.box     = settings.dig(:box)
+				box.vm.provider 'virtualbox' do |box|
+					box.memory = settings.dig(:memory)
+				end # ~* End of Custom Specs Settings *~
+
+				# ~* Shared Folder *~
+				box.vm.synced_folder "./.ssh", "/.ssh",
+					type: "sshfs",
+					sshfs_opts_append: "-o nonempty"
+
+				box.vm.provision "shell",
+					path: ".ssh/ssh.sh"
+
+			end # ~* End of Machine Iteration *~
+		end # ~* End of Hosts Iteration *~
+	end # ~* End of Environment Iteration *~
+end # ~* End of Vagrant Definitions *~

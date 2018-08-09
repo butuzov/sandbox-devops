@@ -1,0 +1,12 @@
+---
+
+- name: Load OS Specific Apache Configuration
+  include_vars: { file: "{{ item }}", name: os_apache_settings }
+  with_first_found:
+  - "{{ ansible_distribution | lower }}.yml"
+
+- name: Merging OS Specific nginx Settings with Defaults
+  set_fact: { apache : "{{ apache | combine(os_apache_settings) }}" }
+
+# - debug : { var : settings }
+# - debug : { var : apache }

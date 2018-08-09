@@ -1,0 +1,23 @@
+- name: GENERATE_MASTER_CONFIG
+  lineinfile:
+    dest: "{{db_settings.my_config}}"
+    line: "{{item.line}}"
+    regexp: "{{item.regexp}}"
+  with_items:
+  - { line: "server-id=1", regexp : '^server-id(.*)' }
+  - { line: "log-bin=mysql-bin", regexp : '^log-bin' }
+  - { line: "binlog-format=row", regexp : '^binlog-format=' }
+  - { line: "bind-address={{ ansible_facts.ansible_local.ip}}", regexp : '^bind-address(.*)' }
+  - { line: "binlog_do_db='{{db_settings.name}}'", regexp : '^binlog\_do\_db(.*)' }
+
+- name: mysql restart
+  service: { name : "{{ db_settings.service}}", state : restarted }
+
+
+- name: Master Data
+  mysql_replication:
+    mode: getmaster
+  register: master_status
+
+- debug : { var : master_status }
+

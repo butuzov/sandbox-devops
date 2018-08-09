@@ -1,0 +1,10 @@
+---
+env_vars:
+  env: STAGING
+
+db:
+  name: 'visits_stage'
+  root_password: '-f3G3nQeB3T7eB#D'
+
+  users:
+  - { username: 'app_user',    password : 'password' }

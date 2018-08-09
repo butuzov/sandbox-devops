@@ -1,0 +1,20 @@
+---
+# Failing if OS isn't CentOS or Ubuntu
+- name: Fail Fast (OS Prerequisite Check)
+  fail: { msg : "{{ ansible_distribution }} isn't supported atm" }
+  when: ansible_distribution not in [ 'CentOS', 'Ubuntu' ]
+
+# Get Deployment Settings
+- name: Get Settings
+  include_tasks: "settings.yml"
+
+# Actual Web App Environment
+- name: Actual Apache and PHP install
+  include_tasks: "install-{{ ansible_distribution | lower }}.yml"
+
+# Gathering and Creating
+# web application configuration
+
+- name: Get Settings
+  include_tasks: "deployment.yml"
+

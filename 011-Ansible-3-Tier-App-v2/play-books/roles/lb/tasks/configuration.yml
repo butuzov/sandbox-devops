@@ -1,0 +1,39 @@
+---
+# Deleting and Creating Directories - in this way we can ensure that
+# ensure that directory is empty.
+- name: Clean Up Local Directories
+  file: { path: "{{ item.dir }}", state: "{{ item.state }}" }
+  with_items:
+  - { dir : "{{ nginx.html_root }}", state: 'absent' }
+  - { dir : "{{ nginx.cert_root }}", state: 'absent' }
+  - { dir : "{{ nginx.html_root }}", state: 'directory' }
+  - { dir : "{{ nginx.cert_root }}", state: 'directory' }
+
+# - debug : { var : settings.nginx_certs }
+
+# Copying
+- name: Coping Certificates
+  copy:
+    src: "{{playbook_dir}}/{{ item.value }}"
+    dest: "{{ nginx.cert_root }}/{{ item.value | basename }}"
+  with_dict: "{{ settings.nginx_certs }}"
+
+# pushing and configuring different os separatly
+- name: facts
+  set_fact: {  group : "{{ ansible_distribution | lower }}" }
+
+- setup:
+  delegate_to: "{{ item }}"
+  delegate_facts: True
+  with_items: "{{ groups[group] }}"
+
+# - debug : { var : "{{ hostvars['centos-lb'] }}" }
+
+# Creating Nginx Configuration
+- name: configuring nginx
+  template: { src : 'nginx.conf.j2', dest: "{{ nginx.configuration }}" }
+  notify:
+  - restart nginx
+
+- name: /etc/hosts
+  lineinfile: { dest: /etc/hosts, line: "127.0.0.1 {{ settings.domain }}" }

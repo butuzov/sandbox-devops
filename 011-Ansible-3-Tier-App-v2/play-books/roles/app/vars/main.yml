@@ -1,0 +1,11 @@
+---
+apache:
+  # this is conf default for CentOS
+  servicename: httpd
+
+  site_conf_root: /etc/httpd/conf.d/
+
+
+  # this is conf default for CentOS and Ubuntu
+  html_root: /var/www/html/
+  cert_root: /var/www/certs/

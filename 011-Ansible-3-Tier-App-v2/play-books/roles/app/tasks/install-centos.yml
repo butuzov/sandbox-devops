@@ -1,0 +1,19 @@
+---
+- name: install lamp
+  yum: { name : "{{ item }}", state : latest }
+  with_items:
+  - httpd
+  - mod_ssl
+  - openssl
+  - httpd-tools
+  - php
+  - php-xdebug
+  - php-mysql
+  notify:
+  - apache_service_cluster_start
+
+- name: SElinux
+  selinux: { policy: targeted, state: permissive }
+  with_items:
+  # - 'httpd_can_network_connect'
+  - 'httpd_can_network_connect_db'

@@ -1,0 +1,17 @@
+---
+env_vars:
+  env: PRODUCTION
+
+db:
+  name: 'visits_production'
+  root_password: '-f3G3nQeB3T7eB#D'
+
+
+  users:
+  - { username: 'app_user',    password : 'Iwi11NeV3Re@3' }
+  # - { username: 'app_user',    password : 'Iwi11NeV3RevEeU$3defaultPA$$WORDS' }
+  # - { username: 'ecommerce-1', password : 'P1a$$wd1' }
+  # - { username: 'ecommerce-2', password : 'P1a$$wd2' }
+  # - { username: 'ecommerce-3', password : 'P1a$$wd3' }
+  # - { username: 'ecommerce-4', password : 'P1a$$wd4' }
+  # - { username: 'ecommerce-5', password : 'P1a$$wd5' }

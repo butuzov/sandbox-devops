@@ -1,0 +1,4 @@
+---
+my_config: /etc/my.cnf
+logs_path: /var/log/
+service: mysqld

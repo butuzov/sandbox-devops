@@ -1,0 +1,43 @@
+
+{% for item in settings.nginx_certs %}
+	{{item}} {{ nginx.cert_root }}/{{settings.nginx_certs[item] | basename }};
+{% endfor %}
+
+	ssl_protocols  TLSv1 TLSv1.1 TLSv1.2;
+	ssl_prefer_server_ciphers on;
+	ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
+
+	# Enable SSL on all domains - you may also want to enable this on a per-site
+	# basis instead if you are supporting multiple virtual hosts.
+	ssl on;
+
+	# Cache SSL sessions for 10m (this is about 40,000 sessions), timing them out
+	# after 24 hours.
+	ssl_session_timeout 1d;
+	ssl_session_cache shared:SSL:5m;
+
+	# Set the buffer size to 1400 bytes (that way it fits into a single MTU).
+	ssl_buffer_size 1400;
+
+	# OCSP Stapling
+	#
+	# When connecting to a server, clients should verify the validity of the server certificate
+	# using either a Certificate Revocation List (CRL), or an Online Certificate Status Protocol (OCSP) record.
+	ssl_stapling            on;
+	ssl_stapling_verify     on;
+
+	resolver 8.8.4.4 8.8.8.8 valid=300s;
+	resolver_timeout 10s;
+
+	# Enable HSTS
+	add_header 'Strict-Transport-Security' 'max-age=31536000; includeSubDomains; preload';
+
+	# Do not allow this site to be displayed in iframes
+	add_header 'X-Frame-Options' 'DENY';
+
+	# Do not permit Content-Type sniffing.
+	add_header 'X-Content-Type-Options' 'nosniff';
+
+	add_header 'Access-Control-Allow-Origin' '*';
+	add_header 'Access-Control-Allow-Credentials' 'true';
+	add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';

@@ -1,0 +1,40 @@
+---
+- name: Install MySQL
+  yum: { name : "{{ item }}", state: present }
+  with_items:
+  - "http://dev.mysql.com/get/mysql57-community-release-el7-8.noarch.rpm"
+
+- name: Install MySQL
+  yum: { name : "{{ item }}", state: present }
+  with_items:
+  - mysql-community-server
+  - mysql-community-client
+  - MySQL-python
+  register: mysql_install
+  notify: [ 'mysql_service_cluster_start' ]
+
+- name: Initial MySQL Start
+  service: { name: 'mysqld', state: 'started' }
+  when: mysql_install.changed == True
+
+# SET GLOBAL validate_password_policy=LOW
+- name: Checker
+  shell: |
+      TMP_PASS=$(cat {{db_settings.logs_path}}mysqld.log  | \
+      grep "temporary password" | \
+      grep -Eoi ": (.*?)" | \
+      sed "s/: //");
+      mysql  -uroot -p$TMP_PASS --connect-expired-password -e "SET GLOBAL validate_password_policy=LOW; ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ settings.db.root_password }}'; uninstall plugin validate_password;";
+  when: mysql_install.changed == True
+  notify: [ 'mysql restart' ]
+
+- name: /root/.my.cnf
+  template: { src: 'my.cnf.j2', dest: '/root/.my.cnf' }
+  when: mysql_install.changed == True
+  notify: [ 'mysql restart' ]
+
+- name: SElinux
+  selinux: { policy: targeted, state: permissive }
+  with_items:
+  - 'httpd_can_network_connect'
+  - 'httpd_can_network_connect_db'

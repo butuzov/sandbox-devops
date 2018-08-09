@@ -1,0 +1,12 @@
+# Loading Configuration of out environment
+- name: Load OS Specific MySQL Configuration
+  include_vars: { file: "{{ item }}", name: os_db_settings }
+  with_first_found:
+  - "{{ ansible_distribution | lower }}.yml"
+
+- name: Merging OS Specific DB Settings with Defaults
+  set_fact: { db_settings : "{{ db_settings | combine(os_db_settings) }}" }
+
+- name: Merging Custom DB Settings with Defaults
+  set_fact: { db_settings : "{{ db_settings | combine(settings.db) }}" }
+  when: settings.db is defined

@@ -1,0 +1,62 @@
+# Cetting facts from loadbalancer again
+- name: Group Fact
+  set_fact:
+    group : "{{ ansible_distribution | lower }}"
+
+- name: Host Facts
+  set_fact:
+    lb         : "{{group}}-lb"
+    db_master  : "{{group}}-db-master"
+    db_slave   : "{{group}}-db-slave"
+
+- setup:
+  delegate_to: "{{ item }}"
+  delegate_facts: True
+  with_list: [ "{{lb}}", "{{db_master}}", "{{db_slave}}" ]
+  # "{{ groups[group] }}"
+
+# - debug : { msg : "{{hostvars[ db_master ].db_settings.users[0] }}" }
+# - debug : { msg : "{{hostvars[ db_slave ].db_settings.users[0] }}"  }
+#   with_items: "{{ groups[group] }}"
+
+# - debug : { var : lb }
+# - debug : { var : db_master }
+# - debug : { var : db_slave }
+
+# - debug : { msg : "{{ hostvars[ db_master ].db_settings }}" }
+# - debug : { msg : "{{ hostvars[  db_slave ].db_settings }}" }
+
+# Adding load balancer to hosts file
+- name: /etc/hosts
+  lineinfile:
+    dest: '/etc/hosts'
+    line: "{{ hostvars[lb].ansible_local.ip }} {{ settings.domain }}"
+
+# Cleanup Procedure
+- name: Clean Up Local Directories
+  file: { path: "{{ item.dir }}", state: "{{ item.state }}" }
+  with_items:
+  - { dir : "{{ apache.html_root }}", state: 'absent' }
+  - { dir : "{{ apache.cert_root }}", state: 'absent' }
+  - { dir : "{{ apache.html_root }}", state: 'directory' }
+  - { dir : "{{ apache.cert_root }}", state: 'directory' }
+
+
+# Copying Certificates
+- name: Coping Certificates
+  copy:
+    src: "{{playbook_dir}}/{{ item.value }}"
+    dest: "{{ apache.cert_root }}/{{ item.value | basename }}"
+  with_dict: "{{ settings.localhost_certs }}"
+
+
+# - debug: { var : apache }
+# - debug: { var : settings.localhost_certs }
+
+# Creating Apache Configuration
+- name: application deployment
+  template: { src: "{{ item.src }}", dest: "{{ item.dest }}"}
+  notify: [ "apache restart" ]
+  with_items:
+  - { src: 'httpd.conf.j2', dest: "{{ apache.site_conf_root }}httpd.conf" }
+  - { src: 'index.php.j2', dest: "{{ apache.html_root }}index.php" }

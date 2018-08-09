@@ -1,0 +1,31 @@
+---
+- name: install lamp
+  apt: { name : "{{ item }}", state : latest }
+  with_items:
+  - apache2
+  - php
+  - libapache2-mod-php
+  - php-mysql
+  - php-xdebug
+  notify:
+  - apache_service_cluster_start
+
+- name: enable ssl
+  shell: "a2enmod ssl"
+
+
+- name: phpini debug
+  lineinfile:
+    dest: "/etc/php/7.0/apache2/php.ini"
+    line: "{{item.line}}"
+    regexp: "{{item.regexp}}"
+  with_items:
+  - { line: "display_errors = On", regexp : '^display_errors(.*)' }
+  notify:
+  - apache_service_cluster_start
+
+# used for debug proposes
+- name: Install MySQL
+  apt: { name : "{{ item }}", state: present }
+  with_items:
+  - "mysql-client-core-5.7"

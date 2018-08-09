@@ -1,0 +1,56 @@
+# This thing will work only once on Ubuntu.
+# no idea whats to write for CentOS
+
+- name: GENERATE_SLAVE_CONFIG
+  lineinfile:
+    dest: "{{db_settings.my_config}}"
+    line: "{{item.line}}"
+    regexp: "{{item.regexp}}"
+  with_items:
+  - { line: "server-id=2", regexp : '^server-id(.*)' }
+  - { line: "bind-address=0.0.0.0", regexp : '^bind-address(.*)' }
+  - { line: "relay-log={{ db_settings.logs_path }}mysql-relay-bin.log", regexp : '^relay-log(.*)' }
+  - { line: "log-bin=mysql-bin", regexp : '^log-bin' }
+  - { line: "replicate_do_db='{{db_settings.name}}'", regexp : '^replicate\_do\_db(.*)' }
+
+- name: MYSQL_VARIABLES | Set read only
+  mysql_variables: { variable: read_only, value: 'ON' }
+
+- name: mysql restart
+  service: { name : "{{ db_settings.service}}", state : restarted }
+
+- mysql_replication:
+    mode: stopslave
+  register: slave_status
+
+- name: Slave Status
+  debug : { var : slave_status }
+
+- mysql_replication:
+    mode: getslave
+  register: slave_status
+- debug : { var : slave_status }
+
+- name: Set MySQL Replication Master
+  mysql_replication:
+    mode: changemaster
+    master_host: '{{ hostvars[master].ansible_local.ip}}'
+    master_user: '{{ db_settings.users[0].username }}'
+    master_password: '{{ db_settings.users[0].password }}'
+    master_log_file: '{{ hostvars[master].master_status.File }}'
+    master_log_pos: '{{ hostvars[master].master_status.Position }}'
+  register: changedmaster
+  when: slave_status.Is_Slave == False
+
+- mysql_replication:
+    mode: startslave
+  register: slave_status
+  when: changedmaster.changed == True
+
+- name: Slave Status
+  debug : { var : slave_status }
+
+
+
+
+

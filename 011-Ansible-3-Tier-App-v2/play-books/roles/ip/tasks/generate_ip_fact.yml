@@ -1,0 +1,12 @@
+---
+- name: Create custom fact directory
+  file: { path: "/etc/ansible/facts.d", state: "directory" }
+
+- name: Store Fact Localy
+  copy:
+    content: "\"{{ansible_facts.all_ipv4_addresses|select('match', '^172')|list|join(',')}}\""
+    dest: /etc/ansible/facts.d/ip.fact
+    mode: 0644
+
+- name: Refreshing Facts for "{{ inventory_hostname }}"
+  setup :

@@ -1,0 +1,6 @@
+---
+# Installing latest package of nginx
+- name: Nginx Installation (apt-get)
+  apt: { name: nginx, state: present }
+  notify:
+  - nginx service cluster

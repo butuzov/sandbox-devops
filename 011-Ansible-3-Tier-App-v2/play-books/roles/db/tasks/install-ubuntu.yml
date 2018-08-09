@@ -1,0 +1,51 @@
+---
+# - name: UN Install MySQL
+#   apt: { name : "{{ item }}", state: absent }
+#   with_items:
+#   - mysql-server-5.7
+
+- name: Install MySQL
+  apt: { name : "{{ item }}", state: present }
+  with_items:
+  - mysql-server-5.7
+  - python3-mysqldb
+  register: mysql_install
+  notify: [ 'mysql_service_cluster_start' ]
+
+- name: Update MySQL root password for all root accounts
+  mysql_user:
+    name : root
+    host : "{{ item }}"
+    password : "{{ db_settings.root_password }}"
+    state: present
+  with_items:
+  - 127.0.0.1
+  - ::1
+  - localhost
+  when: mysql_install.changed == True
+  notify: [ 'mysql_service_cluster_start' ]
+
+# password update
+- name: /root/.my.cnf
+  template: { src: 'my.cnf.j2', dest: '/root/.my.cnf' }
+  when: mysql_install.changed == True
+
+- name: Ensure Anonymous user(s) are not in the database
+  mysql_user: { name : "",  host: "{{ item }}", state: absent }
+  with_items:
+  - localhost
+  - 127.0.0.1
+  - ::1
+  when: mysql_install.changed == True
+  notify: [ 'mysql_service_cluster_start' ]
+
+
+- name: Disable Some minor configuration
+  lineinfile:
+    dest: "{{db_settings.conf_path}}/mysql.conf.d/mysqld.cnf"
+    line: "{{item.line}}"
+    regexp: "{{item.regexp}}"
+    state: absent
+  with_items:
+  - { line: "bind-address = 0.0.0.0", regexp : '^bind-address(.*)' }
+  notify: [ 'mysql restart' ]

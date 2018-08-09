@@ -1,0 +1,71 @@
+<?php
+	ini_set('display_erros',  1);
+	ini_set('display_startup_errors', 1);
+	error_reporting( E_ALL & ~E_NOTICE & ~E_WARNING );
+?>
+<html>
+	<head><title><?php echo $_SERVER['SERVER_ADDR']; ?></title></head>
+	<body>
+<?php
+
+	$db = array(
+		'master' => array(
+			'DB_USER' => '{{ hostvars[db_master].db_settings.users[0].username }}',
+			'DB_PASS' => '{{ hostvars[db_master].db_settings.users[0].password }}',
+			'DB_NAME' => '{{ hostvars[db_master].db_settings.name }}',
+			'DB_HOST' => '{{ hostvars[db_master].ansible_local.ip }}',
+			'DB_PORT' => 3306,
+		),
+		'slave'  => array(
+			'DB_USER' => '{{ hostvars[db_slave].db_settings.users[0].username }}',
+			'DB_PASS' => '{{ hostvars[db_slave].db_settings.users[0].password }}',
+			'DB_NAME' => '{{ hostvars[db_slave].db_settings.name }}',
+			'DB_HOST' => '{{ hostvars[db_slave].ansible_local.ip }}',
+			'DB_PORT' => 3306,
+		),
+	);
+
+	var_dump( $db );
+
+	$links = array();
+	foreach( array_keys( $db ) as $server ){
+		$links[ $server ] = new mysqli(
+				$db[ $server ]['DB_HOST'],
+				$db[ $server ]['DB_USER'],
+				$db[ $server ]['DB_PASS'],
+				$db[ $server ]['DB_NAME'],
+				$db[ $server ]['DB_PORT']
+		);
+		if ( $links[ $server ]->connect_errno ) {
+			echo "Failed to connect to MySQL: (" . $links[ $server ]->connect_errno . ") " . $links[ $server ]->connect_error;
+		}
+	}
+
+	$ip = $_SERVER['SERVER_ADDR'];
+	# running updates
+	$query = "INSERT INTO visits (ip) VALUES ('{$ip}') ON DUPLICATE KEY UPDATE visits = visits+1";
+
+	$res = $links['master']->query($query);
+
+	array_map( 'results', array_keys( $db ) );
+
+	function results( $type ){
+		global $links;
+
+		$title = sprintf("<h4>Query to <code>%s</code></h4>", $type);
+		$header = '<tr><th cellpadding=4 cellspacing=4>IP</th><th cellpadding=4 cellspacing=4>Count</th></tr>';
+		$rows = array();
+
+		$res = $links[ $type ]->query("SELECT * FROM `visits`");
+		while ($row = $res->fetch_assoc()) {
+			$rows[] = sprintf('<tr><td>%s</td><td>%d</td></tr>', $row['ip'], $row['visits']);
+		}
+
+		echo sprintf( '%s <table border="1">%s %s</table>', $title, $header, implode("", $rows));
+	}
+
+
+?>
+
+	</body>
+</html>

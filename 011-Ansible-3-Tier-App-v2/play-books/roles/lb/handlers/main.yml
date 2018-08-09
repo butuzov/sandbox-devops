@@ -1,0 +1,17 @@
+---
+# enable and start nginx
+- name: nginx service cluster
+  service: { name: nginx, enabled: yes }
+  notify:
+  - nginx start
+
+# enable nginx as start
+- name: nginx start
+  service: { name: nginx, state: started }
+
+
+# restrts nginx with new configuration
+- name: restart nginx
+  service: { name : nginx, state : restarted }
+
+

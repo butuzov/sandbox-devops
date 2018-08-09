@@ -1,0 +1,41 @@
+# where am i?
+- set_fact:
+    slave : "{{ group_names[0] }}-db-slave"
+    master : "{{ group_names[0] }}-db-master"
+
+- name: get facts
+  setup:
+  delegate_to: "{{ master if inventory_hostname.find('slave') > -1 else slave }}"
+  delegate_facts: True
+
+- name: Running Master Configuration
+  include_tasks: replication-master.yml
+  when: inventory_hostname.find('master') > -1
+
+- name: Running Slave Configuration
+  include_tasks: replication-slave.yml
+  when: inventory_hostname.find('slave') > -1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# - name: Master Data
+#   mysql_replication:
+#     mode: startslave
+#   register: slave_status
+#   when: inventory_hostname.find('slave') > -1
+
+# - debug : { var : slave_status }
+#   when: inventory_hostname.find('slave') > -1

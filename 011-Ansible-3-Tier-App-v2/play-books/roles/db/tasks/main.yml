@@ -1,0 +1,26 @@
+---
+# Failing if OS isn't CentOS or Ubuntu
+- name: Fail Fast (OS Prerequisite Check)
+  fail: { msg : " {{ansible_os_family}} {{ ansible_distribution }} isn't supported atm" }
+  when: ansible_distribution not in [ 'CentOS', 'Ubuntu' ]
+
+# Get DB Settings
+- name: DB Settings
+  include_tasks: settings.yml
+
+# Install MYSQL
+- name: MySQL Installation Centos
+  include_tasks: "install-{{ ansible_distribution | lower }}.yml"
+
+# Get DB Settings
+- name: Tables and Users
+  include_tasks: create-table-and-users.yml
+
+# Get DB Settings
+- name: Replication
+  include_tasks: replication.yml
+
+# - debug: { var : db_settings }
+
+# - debug: { msg : "slave {{ settings.db.root_password }}" }
+# - debug: { msg : "slave {{ db_settings.root_password }}" }

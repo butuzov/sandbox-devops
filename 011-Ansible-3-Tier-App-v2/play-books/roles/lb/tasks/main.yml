@@ -1,0 +1,26 @@
+---
+# Failing if OS isn't CentOS or Ubuntu
+- name: Fail Fast (OS Prerequisite Check)
+  fail: { msg : " {{ansible_os_family}} {{ ansible_distribution }} isn't supported atm" }
+  when: ansible_distribution not in [ 'CentOS', 'Ubuntu' ]
+
+- name: Load OS Specific Nginx Configuration
+  include_vars: { file: "{{ item }}", name: os_nginx_settings }
+  with_first_found:
+  - "{{ ansible_distribution | lower }}.yml"
+
+- name: Merging OS Specific nginx Settings with Defaults
+  set_fact: { nginx : "{{ nginx | combine(os_nginx_settings) }}" }
+
+# - debug: { var : nginx }
+# - debug: { var : settings }
+
+# Install nginx
+- name: Nginx Installation
+  include_tasks: "install-{{ ansible_distribution | lower }}.yml"
+
+# - debug : { var : settings }
+# - debug : { var : nginx }
+
+- name: Configurating
+  include_tasks: "configuration.yml"

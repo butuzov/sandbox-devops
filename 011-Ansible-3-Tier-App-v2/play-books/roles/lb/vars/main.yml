@@ -1,0 +1,12 @@
+
+---
+nginx:
+  # this is conf default for CentOS and Ubuntu
+  html_root: /usr/share/nginx/html
+  cert_root: /usr/share/nginx/cert
+
+  # Users
+  user: nginx
+  worker_processes: auto
+
+  configuration: /etc/nginx/nginx.conf

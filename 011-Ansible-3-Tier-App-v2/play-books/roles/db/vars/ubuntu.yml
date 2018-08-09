@@ -1,0 +1,6 @@
+---
+my_config: /etc/mysql/mysql.conf.d/mysqld.cnf
+conf_path: /etc/mysql/
+logs_path: /var/log/mysql/
+
+service: mysql
