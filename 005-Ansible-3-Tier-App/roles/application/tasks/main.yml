@@ -1,0 +1,49 @@
+---
+# Installing Apache
+- name: install php
+  yum: name={{ item }} state=latest
+  with_items:
+  - httpd
+  - httpd-tools
+  - php
+  - php-xdebug
+  - php-mysql
+  - php-fpm
+
+- name: enable apache
+  service:
+    name: httpd
+    state: stopped
+    enabled: yes
+
+- name: change web root permission
+  file: path={{ item }} group=apache mode=0770 state=directory
+  with_items:
+    - /var/www/html
+    - /var/www
+
+- name: copy files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "apache"
+  with_items:
+    - { src: 'httpd-root.conf', dest: '/etc/httpd/conf.d/' }
+    - { src: '.htaccess', dest: '/var/www/html/' }
+
+- name: compile and copy index.php
+  force: yes
+  template:
+    src: "index.php.j2"
+    dest: "/var/www/html/index.php"
+
+- name: restart apache
+  service:
+    name: httpd
+    state: started
+
+- name: SELinux
+  command: "{{item}}"
+  with_items:
+  - "setsebool -P httpd_can_network_connect=1"
+  - "setsebool -P httpd_can_network_connect_db=1"

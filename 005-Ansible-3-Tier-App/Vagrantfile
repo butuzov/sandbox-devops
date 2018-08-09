@@ -1,0 +1,23 @@
+Vagrant.configure("2") do |config|
+    config.vm.box              = "centos/7"
+    config.vm.box_check_update = false
+
+    config.vm.provider "virtualbox" do |box|
+        box.cpus   = 1
+        box.memory = "512"
+    end
+
+    [ 'balancer', 'database', 'application-1', 'application-2' ].each do |name|
+        config.vm.define "#{name}" do |box|
+            box.vm.hostname         = "#{name}"
+            box.vm.network "private_network",
+                type: "dhcp"
+        end
+    end
+
+    config.vm.define "balancer" do |box|
+        box.vm.network "forwarded_port",
+            :guest => 80,
+            :host  => 8080
+    end
+end

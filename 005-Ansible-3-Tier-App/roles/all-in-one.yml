@@ -1,0 +1,22 @@
+---
+- name: Load Balancer
+  hosts: balancer
+  become: yes
+  roles:
+    - common
+    - balancer
+
+# Installing MySQL
+- name: DataBase
+  hosts: database
+  become: yes
+  roles:
+    - database
+
+# Installing Applications
+- name: Applications
+  hosts: application
+  become: yes
+  roles:
+    - common
+    - application

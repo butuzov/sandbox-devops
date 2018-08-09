@@ -1,0 +1,16 @@
+[all:vars]
+ansible_connection=ssh
+ansible_user=vagrant
+ansible_host=127.0.0.1
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+
+[balancer]
+balancer ansible_port=2222 ansible_private_key_file=.vagrant/machines/balancer/virtualbox/private_key
+
+[database]
+database ansible_port=2200 ansible_private_key_file=.vagrant/machines/database/virtualbox/private_key
+
+[application]
+application-1 ansible_port=2201 ansible_private_key_file=.vagrant/machines/application-1/virtualbox/private_key
+application-2 ansible_port=2202 ansible_private_key_file=.vagrant/machines/application-2/virtualbox/private_key

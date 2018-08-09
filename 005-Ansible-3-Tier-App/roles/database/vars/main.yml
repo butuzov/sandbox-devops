@@ -1,0 +1,8 @@
+---
+# vars file for db
+user: "application"
+pass: "TReshPandaRocket19375#"
+dbname: "application"
+
+root_user: "root"
+root_pass: "Yo_Soy_Groot123"

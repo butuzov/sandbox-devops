@@ -1,0 +1,74 @@
+---
+# tasks file for db
+- name: add mysql repo
+  yum:
+    name: http://dev.mysql.com/get/mysql57-community-release-el7-8.noarch.rpm
+    state: present
+
+- name: install mysql
+  yum: pkg={{ item }}
+  with_items:
+  - mysql-community-server
+  - mysql-community-client
+  - MySQL-python
+
+- name: enable and start mysql
+  service:
+    name: mysqld
+    state: started
+    enabled: yes
+
+- name: configuration
+  force: no
+  template: src=my.cnf.j2  dest=/root/.my.cnf
+
+- name: configuration
+  shell: |
+    TMP_PASS=$(cat /var/log/mysqld.log  | \
+      grep "temporary password" | \
+      grep -Eoi ": (.*?)" | \
+      sed "s/: //"
+    );
+    mysql  -uroot -p$TMP_PASS --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{root_pass}}'; flush privileges; "
+    sed -i 's/__PASS__/{{root_pass}}/' /root/.my.cnf
+  register: hello
+
+- name: restart mysql
+  service:
+    name: mysqld
+    state: restarted
+
+- name: create db for app
+  mysql_db:
+    name: "{{dbname}}"
+    state: present
+
+- name: restore database (part 1 - copy sql dump)
+  copy:
+    src: "table.sql"
+    dest: "/tmp/table.sql"
+
+- name: restore database (part 2 - import sql dump)
+  mysql_db:
+    name: "{{dbname}}"
+    state: import
+    target: "/tmp/table.sql"
+
+- name: create application user
+  mysql_user:
+    name: "{{user}}"
+    password: "{{pass}}"
+    priv: '*.*:ALL'
+    host: "%"
+    state: present
+
+- set_fact:
+    mysql_user: "{{user}}"
+    mysql_pass: "{{pass}}"
+    mysql_name: "{{dbname}}"
+
+- name: restart mysql
+  service:
+    name: mysqld
+    state: restarted
+

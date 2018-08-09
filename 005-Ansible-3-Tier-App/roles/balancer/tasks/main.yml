@@ -1,0 +1,29 @@
+---
+# Tasks file for Load Balancer
+
+- name: installing nginx
+  yum:
+    name: nginx
+    state: latest
+    enablerepo: epel
+
+- name: stop nginx ( before config change )
+  service:
+    name: nginx
+    state: stopped
+    enabled: yes
+
+- name:  gettings facts - application servers
+  setup:
+  delegate_to: "{{item}}"
+  delegate_facts: True
+  loop: "{{groups['application']}}"
+
+- name: create nginx configuration
+  force: yes
+  template: src=nginx.conf.j2  dest=/etc/nginx/nginx.conf
+
+- name: start nginx ( after config change )
+  service:
+    name: nginx
+    state: started

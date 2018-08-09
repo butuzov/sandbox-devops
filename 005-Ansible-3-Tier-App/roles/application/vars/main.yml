@@ -1,0 +1,6 @@
+---
+# vars file for app
+vars:
+  files:
+  - { src: 'httpd-root.conf', dest: '/etc/httpd/conf.d/' }
+  - { src: '.htaccess', dest: '/var/www/html/' }

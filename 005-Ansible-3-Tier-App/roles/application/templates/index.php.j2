@@ -1,0 +1,38 @@
+<?php
+
+	printf( 'IP is <strong>%s</strong>',  $_SERVER['SERVER_ADDR']);
+
+
+	define( 'DB_USER', "{{hostvars["database"]["mysql_user"] }}");
+	define( 'DB_PASS', "{{hostvars["database"]["mysql_pass"] }}");
+	define( 'DB_HOST', "{{hostvars["database"]['ansible_all_ipv4_addresses'][0] }}");
+	define( 'DB_PORT', "3306");
+	define( 'DB_NAME', "{{hostvars["database"]["mysql_name"] }}" );
+
+
+	# var_dump([
+	# 	'DB_USER' => DB_USER,
+	# 	'DB_PASS' => DB_PASS,
+	# 	'DB_NAME' => DB_NAME,
+	# 	'DB_HOST' => DB_HOST,
+	# 	'DB_PORT' => DB_PORT,
+	# ]);
+
+	$mysqli = new mysqli( DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT );
+	// var_dump($mysqli);
+
+	$query = "INSERT INTO visits (ip) VALUES ('{$_SERVER[SERVER_ADDR]}') ON DUPLICATE KEY UPDATE visits = visits+1";
+
+	//var_dump($query);
+
+	$mysqli->query($query);
+
+	$res = $mysqli->query("SELECT * FROM `visits`");
+
+	while ($row = $res->fetch_assoc()) {
+		var_dump($row);
+	}
+
+
+
+

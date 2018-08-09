@@ -1,0 +1,8 @@
+---
+- name: update yum
+  command: "yum -y upgrade"
+
+- name: epel-release
+  yum:
+    name: epel-release
+    state: latest
