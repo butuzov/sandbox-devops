@@ -1,0 +1,70 @@
+Vagrant.configure("2") do |config|
+
+	config.vm.box              = "centos/7"
+	config.vm.box_check_update = false
+
+	# ~* Hosts *~ #
+
+	hosts = {
+		:master => {
+			:memory => '2048',
+			:ip		=> '192.168.10.9',
+			:ports  =>  [ 8080, 8081, 5000 ]
+		},
+		:slave  => {
+			:memory => '512',
+			:ip	=> '192.168.10.6',
+			:ports  =>  [ 8090, 8091, 8092 ]
+		},
+	}.each do |name, settings|
+
+		config.vm.define "#{name}" do |box|
+
+			box.vm.network "private_network",
+							ip: settings.dig(:ip)
+
+			box.vm.provider 'virtualbox' do |box|
+				box.memory = settings.dig(:memory)
+			end # ~* End of Custom Specs Settings *~
+
+			# Provisioning Separate Key
+			# later will be used by ansible
+			box.vm.provision :shell,
+				:run => "always",
+				:path => "shared/ssh-keys.sh"
+
+
+			if ( "#{name}" == "master" )
+				box.vm.provision :shell,
+					:path => "shared/master.sh"
+
+				box.vm.synced_folder "./shared", "/shared",
+					type: "sshfs",
+					sshfs_opts_append: "-o nonempty"
+
+				box.vm.provision "shell",
+					run:"always",
+					inline: "docker-compose -f /shared/registry/docker-compose.yml up -d"
+
+				box.vm.provision "shell",
+					inline: "echo 127.0.0.1	registry.made.ua >> /etc/hosts"
+
+			end # ~* End of Master Machine Definition *~
+
+			if ( "#{name}" == "slave" )
+
+				box.vm.provision "shell",
+					inline: "echo 192.168.10.9	registry.made.ua >> /etc/hosts"
+
+			end # ~* End of Slave Machine Definition *~
+
+
+			settings.dig(:ports).each do |port|
+				box.vm.network "forwarded_port",
+					guest: port,
+					host: port
+			end
+
+		end # ~* End of Machine Definition *~
+	end # ~* End of Hosts Iteration *~
+end # ~* End of Vagrant Definitions *~

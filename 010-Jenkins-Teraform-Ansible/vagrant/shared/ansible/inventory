@@ -1,0 +1,9 @@
+[all:vars]
+ansible_port=22
+ansible_connection=ssh
+ansible_user=vagrant
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+
+[hosts]
+slave ansible_host="192.168.10.6" ansible_private_key_file=/vagrant/shared/.ssh/ssh-private-key

@@ -1,0 +1,58 @@
+---
+- name: Is it running 1?
+  debug: { msg : "c'mon everybody!" }
+  when: ansible_distribution == "CentOS"
+
+- name: yum install epel
+  yum: { name : 'epel-release.noarch',  state : latest }
+
+- name: Updating `yum`
+  yum: { name : '*', state : latest }
+  when: ansible_distribution == "CentOS"
+
+- name: Installing Software (Docker)
+  yum: { name : 'docker', state : installed }
+  when: ansible_distribution == "CentOS"
+
+- name: Starting Service (Docker)
+  service: { name: docker, state: started, enabled : yes}
+  when: ansible_distribution == "CentOS"
+
+- name: Installing Software (python-pip)
+  yum: { 'name' : 'python-pip', 'state' : 'installed' }
+  when: ansible_distribution == "CentOS"
+
+- name: Installing pip package (docker-compose)
+  pip: { name : 'docker-compose', state : present }
+  when: ansible_distribution == "CentOS"
+
+- name: Deployment Location Check
+  stat: { path : apppath }
+  register: deployment
+
+- name: create location fodler
+  file:
+    path  : "{{ app_path }}"
+    state : directory
+    owner : "{{ ansible_user }}"
+    group : "{{ ansible_user }}"
+    mode  : 0755
+  when: deployment.stat.exists == False
+
+- name: docker-compose.yml
+  template:
+    src : 'docker-compose.yml.j2'
+    dest: '{{ app_path }}/docker-compose.yml'
+    owner : "{{ ansible_user }}"
+    group : "{{ ansible_user }}"
+    mode  : 0755
+
+- name: Docker Compose Deployment
+  shell: "{{item}}"
+  with_items:
+    - "cd {{ app_path }}"
+    - "ls -la"
+    - "docker login -u {{docker_registry_user}} -p {{docker_registry_pass}} {{docker_registry_host}}:{{docker_registry_port}}"
+    - "cd '{{ app_path }}' && docker-compose down"
+    - "cd '{{ app_path }}' && docker-compose up -d"
+

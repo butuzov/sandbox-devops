@@ -12,3 +12,4 @@ The Journey of a Thousand Miles Begins with One Step.
   1. [Kubernetes - hello world](007-K8S-Hello-World)
   1. [Kubernetes - MySQL](008-K8S-MySQL)
   1. [Kubernetes - Accessing pods in cluster](009-K8S-Accessing-Pods-In-Cluster)
+  1. [Jenkins - Ansible/Artifactory/Docker/Docker Registry on Vagrant and AWS (with Terraform)](010-Jenkins-Teraform-Ansible)

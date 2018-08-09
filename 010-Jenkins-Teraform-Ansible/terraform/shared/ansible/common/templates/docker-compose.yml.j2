@@ -1,0 +1,9 @@
+version: '2'
+
+services:
+  application:
+    image: {{docker_registry_host}}:{{docker_registry_port}}/{{app_name}}:{{ app_tag }}
+    ports:
+    - "{{ app_port }}:8080"
+    restart: always
+    mem_limit: 128m

@@ -1,0 +1,156 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
+
+// Build Tag
+def BUILD_NUMBER=env.BUILD_ID.padLeft(5, "0")
+def BUILD_DATE=new SimpleDateFormat('yyyyMMdd').format(new Date())
+def BUILD_BRANCH= env.BRANCH_NAME ?: 'develop';
+def TAG="${BUILD_BRANCH}-${BUILD_DATE}-${BUILD_NUMBER}"
+
+// Configuration
+def map = [
+	'centos' : ['master' : [:], 'develop': [:] ] ,
+	'ami'    : ['master' : [:], 'develop': [:] ] ,
+];
+
+// Vagrant Environment
+(map['centos']['master']).put( 'prod',
+	add([ 'node' : 'slave', 'port' : 8090, 'path' : '/vagrant/deployments/live/' ]) )
+
+(map['centos']['develop']).put( 'qa',
+	add([ 'node' : 'slave', 'port' : 8091, 'path' : '/vagrant/deployments/qa' ]) )
+
+(map['centos']['develop']).put( 'dev',
+	add([ 'node' : 'slave', 'port' : 8092, 'path' : '/vagrant/deployments/dev' ]) )
+
+// Amazon Environment
+(map['ami']['master']).put( 'prod',
+	add([
+		'node' : 'slave',
+		'port' : 8090,
+		'path' : '/home/ec2-user/deployments/live/',
+		'hosts': '/ansible/inventory',
+		'play' : '/ansible/playbook.yml',
+	])
+)
+
+(map['ami']['develop']).put( 'qa',
+	add([	'node' : 'slave',
+			'port' : 8091,
+			'path' : '/home/ec2-user/deployments/qa',
+			'hosts': '/ansible/inventory',
+			'play' : '/ansible/playbook.yml',
+	])
+)
+
+(map['ami']['develop']).put( 'dev',
+	add([	'node' : 'slave',
+			'port' : 8092,
+			'path' : '/home/ec2-user/deployments/dev',
+			'hosts': '/ansible/inventory',
+			'play' : '/ansible/playbook.yml',
+	])
+)
+
+
+node( 'master' ) {
+
+	stage('bootstrap') {
+		osenv = (sh(returnStdout: true, script: 'uname -a')).contains('amzn')
+			? 'ami' : 'centos';
+
+		if ( ! map.containsKey( osenv ) ) {
+			echo 'environment non exists';
+			sh "exit 1"
+		}
+
+		if ( ! (map[ osenv ]).containsKey( BUILD_BRANCH  ) ) {
+			echo 'branch non configured for cicd';
+			sh "exit 1"
+		}
+
+
+	}
+
+	// Git Checkout
+	stage( 'git' ) {
+		properties([pipelineTriggers([[$class: 'GitHubPushTrigger'],
+		 	pollSCM('* * * * *')])])
+
+		checkout scm
+	}
+
+	// maven
+	stage( 'maven' ) {
+		sh 'mvn clean compile test package'
+	}
+
+	stage( 'artifactory' ) {
+
+		def server = Artifactory.server 'artifactory'
+		def uploadSpec = """{
+			"files": [ {
+				"pattern": "target/*.jar",
+				"target": "example-repo-local/${TAG}/"
+			} ]
+		}"""
+		server.upload(uploadSpec)
+
+	}
+
+	stage( 'docker' ) {
+
+		// prepare dockerfile
+		sh "sed -i -E \"s/(target\\/)(.*) /target\\/`ls target | grep jar | grep -v original` /\" Dockerfile"
+
+
+		def registryUrl = 'https://registry.made.ua:5000';
+		def registryCredentials = 'docker-credentials';
+		docker.withRegistry( registryUrl, registryCredentials  ) {
+			def image =  docker.build("appka:${TAG}" );
+			image.push('latest');
+			image.push();
+		}
+
+		// sh "docker rmi -f `docker images | grep appka | awk '{print \$3}' | uniq`"
+
+	}
+
+	// deploying to production/staging.
+	stage( 'ansible deployment' ) {
+		(map[osenv][BUILD_BRANCH]).each{ item -> playbook( item, TAG ) }
+	}
+}
+
+
+/**
+ * Settings with defaults...
+ */
+def add( settings ){
+	def defaults = [
+		'node'  : 'slave',
+		'port'  : 8080,
+		'path'  : '/vagrant/deployment/',
+		'hosts' : '/vagrant/shared/ansible/inventory',
+		'play'  : '/shared/ansible/playbook.yml'
+	];
+
+	return ( defaults.keySet() + settings.keySet() )
+			.collectEntries { [ (it) : settings[it] ?: defaults[it] ]}
+}
+
+/**
+ * Running Ansible Playbook.
+ */
+def playbook( item, tag ){
+    echo "Deploying envinment ${item.key}"
+	ansiblePlaybook(
+		become: true,
+		extras: "-e app_port='${item.value.get("port")}' -e app_path='${item.value.get("path")}' -e app_tag='${tag}' ",
+		installation: 'ansible',
+		limit: item.value.get("node"),
+		inventory: item.value.get("hosts"),
+		playbook: item.value.get("play"),
+	)
+}

@@ -1,0 +1,52 @@
+---
+- name: Where am I?
+  debug: { msg : "Amazon" }
+  when: ansible_distribution == "Amazon"
+
+- name: Updating `yum`
+  yum: { name : '*', state : latest }
+
+- name: Installing Software (Docker)
+  yum: { name : 'docker', state : installed }
+
+- name: Starting Service (Docker)
+  service: { name: docker, state: started, enabled : yes}
+
+- name: User Mod
+  shell: "usermod -aG docker ec2-user"
+
+- name: Installing Docker Compose
+  shell: |
+    curl -L https://github.com/docker/compose/releases/download/1.21.1/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
+    chmod +x /usr/bin/docker-compose
+
+- name: Deployment Location - Check
+  stat: { path : app_path }
+  register: deployment
+
+- name: Deployment Location - Create
+  file:
+    path  : "{{ app_path }}"
+    state : directory
+    owner : "{{ ansible_user }}"
+    group : "{{ ansible_user }}"
+    mode  : 0755
+  when: deployment.stat.exists == False
+
+- name: docker-compose.yml
+  template:
+    src : 'docker-compose.yml.j2'
+    dest: '{{ app_path }}/docker-compose.yml'
+    owner : "{{ ansible_user }}"
+    group : "{{ ansible_user }}"
+    mode  : 0755
+
+- name: Docker Compose Deployment
+  shell: "{{item}}"
+  with_items:
+    - "cd {{ app_path }}"
+    - "ls -la"
+    - "docker login -u {{docker_registry_user}} -p {{docker_registry_pass}} {{docker_registry_host}}:{{docker_registry_port}}"
+    - "cd '{{ app_path }}' && docker-compose down"
+    - "cd '{{ app_path }}' && docker-compose up -d"
+

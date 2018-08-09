@@ -1,0 +1,11 @@
+---
+docker_registry_host : "registry.made.ua"
+docker_registry_port : "5000"
+
+docker_registry_user : "admin"
+docker_registry_pass : "password"
+
+
+app_name : appka
+app_tag  : latest
+app_port : 8080

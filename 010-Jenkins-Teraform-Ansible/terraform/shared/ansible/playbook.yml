@@ -1,0 +1,7 @@
+---
+- hosts: all
+  name: Docker Images Deploy Procedure
+  gather_facts: yes
+  become: yes
+  roles:
+    - common

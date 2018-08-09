@@ -1,0 +1,27 @@
+version: '2'
+
+services:
+  registry:
+    image: docker.io/registry:2.6.2
+    ports:
+    - "5000:5000"
+    volumes:
+    - ./data:/var/lib/registry
+    - ./secrets:/certs
+    - ./secrets/htpasswd:/auth/htpasswd
+    restart: always
+    mem_limit: 768m
+    environment:
+    - REGISTRY_HTTP_TLS_CERTIFICATE=/certs/fullchain.pem
+    - REGISTRY_HTTP_TLS_KEY=/certs/privkey.pem
+    - REGISTRY_HTTP_ADDR= :5000
+    - REGISTRY_HTTP_HOST=https://registry.made.ua:5000
+
+    # admin : password
+    - REGISTRY_AUTH=htpasswd
+    - REGISTRY_AUTH_HTPASSWD_REALM=Registry_Realm
+    - REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd
+    networks:
+      default:
+        aliases:
+        - registry.made.ua
