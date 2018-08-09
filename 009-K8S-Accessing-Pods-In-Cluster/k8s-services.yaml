@@ -1,0 +1,50 @@
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: web
+spec:
+  selector:
+    application : www
+  ports:
+  - port: 80
+    targetPort: 80
+  type: NodePort
+
+---
+
+kind: ReplicationController
+apiVersion: v1
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    application : www
+  template:
+    metadata:
+      labels:
+        application : www
+    spec:
+
+      initContainers:
+      - name: curly-curly
+        image: docker.io/butuzov/curl:latest
+        command: ['sh', '-c', 'curl MAIN_PAGE >> /usr/share/nginx/html/index.html']
+
+        volumeMounts:
+          - name: shared
+            mountPath: /usr/share/nginx/html
+
+      containers:
+      - name: nginx
+        image: docker.io/butuzov/nginx:latest
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: shared
+            mountPath: /usr/share/nginx/html
+
+      volumes:
+      - name: shared
+        emptyDir: {}

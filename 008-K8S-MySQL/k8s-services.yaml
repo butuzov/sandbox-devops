@@ -1,0 +1,95 @@
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysql
+spec:
+  clusterIP: None
+  selector:
+    apca: myapp
+    role: server
+  ports:
+  - port: 3306
+    name: mysql-port
+
+---
+
+# Actual MySQL Server
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: mysql-server
+  labels:
+    apca: myapp
+    role: server
+spec:
+  terminationGracePeriodSeconds: 10
+  containers:
+  - name: mysql-server
+    image: docker.io/mysql:5.7
+
+    # Ports
+    ports:
+    - containerPort: 3306
+
+    # Secret
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mysqlsecret
+          key: password
+
+    # Resources we requsting from host/node
+    resources:
+      requests:
+        cpu: 0.1
+        memory: 256Mi
+
+---
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: mysql-client
+  labels:
+    name: mysql-client
+    role: client
+spec:
+
+  containers:
+  - name: mysql-client
+    image: docker.io/butuzov/mysql
+    command: ["sleep"]
+    args: ["3600"]
+
+    # requested resources
+    resources:
+      requests:
+        cpu: 0.05
+        memory: 64Mi
+
+    # Secret
+    env:
+    - name: PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mysqlsecret
+          key: password
+
+  restartPolicy: OnFailure
+
+---
+
+# https://kubernetes.io/docs/concepts/configuration/secret/
+
+kind: Secret
+apiVersion: v1
+metadata:
+  name: mysqlsecret
+type: Opaque
+data:
+  # echo -n 'PaSsWoRd' | base64
+  password: UGFTc1dvUmQ=

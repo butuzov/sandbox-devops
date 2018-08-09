@@ -1,0 +1,90 @@
+pipeline {
+  agent {
+    label "jx-base"
+  }
+
+
+  stages {
+    stage('Pull repo') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          sh '''
+            git clone $GITHUB_REPO_URL repo
+          '''
+        }
+      }
+    }
+    stage('Create resources') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          dir('repo') {
+            sh '''
+             export RANDOM_URL="https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?date=$(date -d @$(perl -e 'print 1267619929 + int(rand(1530292601 - 1267619929))') +%Y%m%d)"
+             curl ${RANDOM_URL} > /tmp/url.html
+             sed -i -e "s|MAIN_PAGE|${RANDOM_URL}|" 009-K8S-Accessing-Pods-In-Cluster/k8s-services.yaml
+             kubectl create -f 009-K8S-Accessing-Pods-In-Cluster/k8s-services.yaml
+            '''
+          }
+        }
+      }
+    }
+    stage('Wait for pods to be ready') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          retry(60) {
+            sh '''
+              kubectl get pods -l application=www --output=jsonpath={.items..status.phase} | grep 'Running'
+            '''
+            sleep 1
+          }
+        }
+      }
+    }
+    stage('Check web page') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          sleep 5
+          sh '''
+            test $(kubectl get pods -l application=www --no-headers | wc -l) -eq 1
+            kubectl exec -ti $(kubectl get pods -l application=www --output=jsonpath={.items..metadata.name}) curl web > main.html
+            diff /tmp/url.html main.html
+          '''
+        }
+      }
+    }
+    stage('Check web page after restart') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          sh '''
+             sleep 30
+             kubectl delete pods -l application=www
+
+             COUNTER=0
+             while [ $COUNTER -lt 30 ]; do
+               if kubectl get pods -l application=www --output=jsonpath={.items..status.phase} | grep 'Running'; then
+                 break
+               else
+                 sleep 1
+                 let COUNTER=COUNTER+1
+               fi
+             done
+
+             kubectl exec -ti $(kubectl get pods -l application=www --output=jsonpath={.items..metadata.name}) curl web > main.html
+             diff /tmp/url.html main.html
+          '''
+        }
+      }
+    }
+  }
+  post {
+    always {
+      container('jenkinsxio-builder-base') {
+        dir('repo') {
+          sh '''
+            kubectl delete -f 009-K8S-Accessing-Pods-In-Cluster/k8s-services.yaml
+          '''
+        }
+      }
+    }
+  }
+}

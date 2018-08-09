@@ -1,0 +1,74 @@
+pipeline {
+  agent {
+    label "jx-base"
+  }
+  stages {
+    stage('Pull repo') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          sh '''
+            git clone $GITHUB_REPO_URL repo
+          '''
+        }
+      }
+    }
+    stage('Create resources') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          dir('repo') {
+            sh '''
+             kubectl create -f k8s-services.yaml
+            '''
+          }
+        }
+      }
+    }
+    stage('Wait for pods to be ready') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          retry(60) {
+            sh '''
+              for i in client server; do
+                test $(kubectl get pod mysql-${i} --output=jsonpath={.status.phase}) = 'Running' || exit 1
+              done
+            '''
+            sleep 1
+          }
+        }
+      }
+    }
+    stage('Check connections') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          sleep 30
+          sh '''
+            test $(kubectl get pods --no-headers mysql-client | wc -l) -eq 1
+            test $(kubectl get pods --no-headers mysql-server | wc -l) -eq 1
+
+            test $(kubectl get pod -l role=server --output=jsonpath={.items..spec.containers[].resources.requests.cpu}) = "100m"
+            test $(kubectl get pod -l role=server --output=jsonpath={.items..spec.containers[].resources.requests.memory}) = "256Mi"
+            test $(kubectl get pod -l role=client --output=jsonpath={.items..spec.containers[].resources.requests.cpu}) = "50m"
+            test $(kubectl get pod -l role=client --output=jsonpath={.items..spec.containers[].resources.requests.memory}) = "64Mi"
+
+            kubectl exec -ti mysql-client -- git clone https://github.com/butuzov/DevOps-Journey.git kubelab
+            kubectl exec -ti mysql-client -- sh -c 'echo -n $(date +%s) > value.txt'
+            kubectl exec -ti mysql-client -- sh -c 'value=$(cat value.txt); sed -i "s/RANDOM_VALUE/${value}/" kubelab/008-K8S-MySQL/script.sql'
+            kubectl exec -ti mysql-client -- sh -c 'mysql -u root -p$PASSWORD -h mysql < kubelab/008-K8S-MySQL/script.sql'
+            kubectl exec -ti mysql-client -- sh -c 'value=$(cat value.txt); mysql -u root -p$PASSWORD -h mysql LAB -sN -r -e "SELECT kubeval FROM Kubelab" | grep $value'
+        '''
+        }
+      }
+    }
+  }
+  post {
+    always {
+      container('jenkinsxio-builder-base') {
+        dir('repo') {
+          sh '''
+            kubectl delete -f k8s-services.yaml
+          '''
+        }
+      }
+    }
+  }
+}

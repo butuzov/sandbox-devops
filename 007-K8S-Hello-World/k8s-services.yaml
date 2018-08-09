@@ -1,0 +1,108 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: nginx-1-web
+spec:
+  selector:
+    app: web-1
+  ports:
+  - port: 80
+    targetPort: nginx-1-port
+  type: NodePort
+
+---
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nginx-1
+  labels:
+    app: web-1
+spec:
+  containers:
+  - name: nginx-1
+    image: docker.io/butuzov/nginx:latest
+    ports:
+      - containerPort: 8081
+        name: nginx-1-port
+    volumeMounts:
+      - mountPath: /etc/nginx/conf.d/default.conf
+        subPath: default.conf
+        name: config
+  volumes:
+    - name: config
+      configMap:
+        name: nginx-1-conf
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: nginx-1-conf
+data:
+  default.conf: |
+    server {
+        listen       8081;
+        server_name  _;
+
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+    }
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: nginx-2-web
+spec:
+  selector:
+    app: web-2
+  ports:
+  - port: 80
+    targetPort: nginx-2-port
+  type: NodePort
+
+---
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nginx-2
+  labels:
+    app: web-2
+spec:
+  containers:
+  - name: nginx-2
+    image: docker.io/butuzov/nginx:latest
+    ports:
+      - containerPort: 8082
+        name: nginx-2-port
+    volumeMounts:
+      - mountPath: /etc/nginx/conf.d/default.conf
+        subPath: default.conf
+        name: config
+  volumes:
+    - name: config
+      configMap:
+        name: nginx-2-conf
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: nginx-2-conf
+data:
+  default.conf: |
+    server {
+        listen       8082;
+        server_name  _;
+
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+    }

@@ -1,0 +1,69 @@
+pipeline {
+  agent {
+    label "jx-base"
+  }
+  stages {
+    stage('Pull repo') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          sh '''
+            git clone $GITHUB_REPO_URL repo
+          '''
+        }
+      }
+    }
+    stage('Create resources') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          dir('repo') {
+            sh '''
+             kubectl create -f k8s-services.yaml
+            '''
+          }
+        }
+      }
+    }
+    stage('Wait for pods to be ready') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          retry(60) {
+            sh '''
+              for i in 1 2; do
+                test $(kubectl get pod nginx-${i} --output=jsonpath={.status.phase}) = 'Running' || exit 1
+              done
+            '''
+            sleep 1
+          }
+        }
+      }
+    }
+    stage('Check connections') {
+      steps {
+        container('jenkinsxio-builder-base') {
+          sleep 3
+          sh '''
+            test $(kubectl get pod nginx-1 --output=jsonpath={.metadata.labels.app}) = "web-1"
+            test $(kubectl get pod nginx-2 --output=jsonpath={.metadata.labels.app}) = "web-2"
+            kubectl exec -ti nginx-1 -- curl --connect-timeout 2 -s nginx-1-web
+            kubectl exec -ti nginx-1 -- curl --connect-timeout 2 -s nginx-2-web
+            kubectl exec -ti nginx-1 -- curl --connect-timeout 2 -s nginx-1:8081
+            kubectl exec -ti nginx-2 -- curl --connect-timeout 2 -s nginx-1-web
+            kubectl exec -ti nginx-2 -- curl --connect-timeout 2 -s nginx-2-web
+            kubectl exec -ti nginx-2 -- curl --connect-timeout 2 -s nginx-2:8082
+        '''
+        }
+      }
+    }
+  }
+  post {
+    always {
+      container('jenkinsxio-builder-base') {
+        dir('repo') {
+          sh '''
+            kubectl delete -f k8s-services.yaml
+          '''
+        }
+      }
+    }
+  }
+}

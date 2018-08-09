@@ -9,4 +9,6 @@ The Journey of a Thousand Miles Begins with One Step.
   1. [Docker-Compose - WebDev Stack](004-Docker-Compose)
   1. [Ansible Deployment for 3 Tier App (Ansible Hello World v1)](005-Ansible-3-Tier-App)
   1. [Terraform and AWS (hello world)](006-Terraform-AWS)
-
+  1. [Kubernetes - hello world](007-K8S-Hello-World)
+  1. [Kubernetes - MySQL](008-K8S-MySQL)
+  1. [Kubernetes - Accessing pods in cluster](009-K8S-Accessing-Pods-In-Cluster)
