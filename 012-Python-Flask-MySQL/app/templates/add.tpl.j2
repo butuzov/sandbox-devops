@@ -1,0 +1,20 @@
+{% extends "index.tpl.j2"  %}
+{% set active_page = "add" %}
+
+{% block content %}
+
+{% if request.args.get('error') %}
+    <div class="notice error">{{request.args.get('error')}}</div>
+{% endif %}
+
+{% if request.args.get('ok') %}
+    <div class="notice ok">{{request.args.get('ok')}}</div>
+{% endif %}
+
+<form method="post">
+    <input type="text" name="name" placeholder="Say Your Name" autocomplete="off" />
+</form>
+ 
+
+
+{% endblock %}

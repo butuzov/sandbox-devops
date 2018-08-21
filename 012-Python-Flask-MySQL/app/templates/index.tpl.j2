@@ -1,0 +1,31 @@
+<html>
+    <head>
+    <link rel="stylesheet" type= "text/css" href="{{url_for('static',filename='style.css')}}">
+    </head>
+    <body>
+
+    {% set menu = [
+        ('/', 'index', 'Index'),
+        ('/add', 'add', 'Add Entry'),
+        ('/list', 'list', 'List Entries')
+    ] -%}
+    {% set active_page = active_page|default('index') -%}
+
+    <header>
+        <nav>
+        {% for href, id, text in menu %}
+        <a href="{{ href | e }}" {% if id == active_page %} class="active" {% endif
+  %} >{{ text | e }}</a>
+        {% endfor %}
+
+        </nav>
+    </header>
+
+    <hr>
+
+    {% block content %}
+    <h1>Hola!</h1>
+    {% endblock %}
+
+    </body>
+</html>

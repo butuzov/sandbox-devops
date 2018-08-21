@@ -1,0 +1,31 @@
+{% extends "index.tpl.j2"   %}
+{% set active_page = "list" %}
+
+{% block content %}
+
+<form>
+    <input type="date" name="start" id="date_Start" value=""  />
+    <input type="date" name="end" id="date_End" value=""  />
+    <input type="submit" />
+</form>
+<script>
+document.getElementById("date_Start").value = "{{ dates.get('start', '')}}";
+document.getElementById("date_End").value = "{{ dates.get('end', '')}}";
+</script>
+
+{{ sql }}
+
+{% if data %}
+   <dl>
+    {% for item in data %}
+    <dt> 
+        <dt>{{ item.name }}</dt>
+        <dd>{{ item.time }}</dd>
+    </dt>
+    {% endfor%}
+    </dl>
+{% else %}
+<h1>nothing here... shoo shoo go away...</h1>
+{% endif %}
+
+{% endblock %}
