@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: "EC2 AMI's Backup Procedure"
+
+####################################################################################################
+
+Parameters:
+
+  StackName:
+    Type: String
+    Default: EC2_Instances_Backup_Procedure
+
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+    - dev
+    - pro
+
+####################################################################################################
+
+Resources:
+
+  Schedule:
+    Description: ScheduledRule to backup instances
+    Type: AWS::Events::Rule
+    Properties:
+      Description: ScheduledRule to backup instances
+      ScheduleExpression: rate(1 day)
+      State: ENABLED
+      Name: !Join [ "_", [ !Ref Environment, !Ref StackName ] ]
+      Targets:
+      -  Arn: !GetAtt Lambda.Arn
+         Id: !Join [ "_", [ !Ref Environment, !Ref StackName ] ]
+
+  Lambda:
+    Description: Backup instances that decorated with "backup" tag (emty)
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Join [ "_", [ !Ref Environment, !Ref StackName ] ]
+      Code:
+        S3Bucket: butuzov-lambdas
+        S3Key: lambda.zip
+      Handler: lambda.main
+      Role: !GetAtt Role.Arn
+      Runtime: python3.6
+      Timeout: 10
+      MemorySize: 128
+
+  Role:
+    Description: IAM Role for Running Lambda
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns: [ !Ref Policy ]
+      RoleName: !Join [ "_", [ !Ref Environment, !Ref StackName ]]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ "lambda.amazonaws.com" ]
+          Action: [ "sts:AssumeRole" ]
+
+  Policy:
+    Description: Policy allows to create/list/delete EC2 Instances, amis and their snapshots.
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Join [ "_", [ !Ref Environment, !Ref StackName ]]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+
+        # List describe instances, create images and delete snapshots.
+        - Effect: Allow
+          Action:
+          - ec2:DescribeInstances
+          - ec2:CreateImage
+          - ec2:DescribeImages
+          - ec2:DeregisterImage
+          - ec2:DeleteSnapshot
+          Resource: [ "*" ]
+
+        # Logs
+        - Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          Resource: [ "arn:aws:logs:*:*:*" ]

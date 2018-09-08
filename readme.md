@@ -16,3 +16,4 @@ The Journey of a Thousand Miles Begins with One Step.
   1. [Ansible Deployment for 3 Tier App (v2)](011-Ansible-3-Tier-App-v2)
   1. [Python: Running Simple Web App (flask)](012-Python-Flask-MySQL)
   1. [Python: Network resources using UDP and TCP](013-Python-Network-Checker)
+  1. [AWS: Python Lambda for EC2 instances backups and cleanups using CloudFormation](014-aws-cloudformation-lambda)
