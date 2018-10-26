@@ -1,0 +1,110 @@
+service: lambda-APITest
+
+
+custom:
+  stage: ${opt:stage, 'beta'}
+
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: ${opt:region, 'us-west-2'}
+  stackName: "${self:custom.stage}-${self:service}"
+  deploymentBucket: ${cf:${self:custom.stage}-Serverless.ServerlessS3Bucket}
+  role: { Fn::GetAtt: ["Role","Arn"] }
+  endpointType: regional
+
+functions:
+  App:
+    name: ${self:provider.stackName}
+    description: "ApiTest [${self:provider.stackName}]"
+    handler: lambda.handler
+    package:
+      include: [ "lambda.py" ]
+    events:
+    - http:
+        path: ""
+        method: get
+        cors: true
+
+package:
+  individually: true
+  exclude: [ "./**" ]
+
+resources:
+  Description: "Serverless: Test Api App"
+
+  Mappings: ${file(./mappings-values.yml)}
+
+  Resources:
+
+    # -------------------------------------------------------
+    # Execution Order Maters
+    # https://github.com/serverless/serverless/issues/4029
+    # Lambda -> (Domain & RestApi) -> Deployment -> BasePathMapping
+    # -------------------------------------------------------
+
+    Domain:
+      Type: AWS::ApiGateway::DomainName
+      Properties:
+        DomainName: { Fn::FindInMap : [ Domains, "${self:custom.stage}", "domain" ] }
+        EndpointConfiguration:
+          Types: [ "REGIONAL" ]
+        RegionalCertificateArn:  { Fn::FindInMap : [ Certs, "${self:custom.stage}", "arn" ] }
+      DependsOn: AppLambdaFunction
+
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Description: "ApiGatheway [${self:provider.stackName}]"
+        Name: ${self:provider.stackName}
+      DependsOn: AppLambdaFunction
+
+    ApiGatewayDeployment:
+      Type: "AWS::ApiGateway::Deployment"
+      Properties:
+        Description: "Deployment [${self:provider.stackName}]"
+        RestApiId: { Ref: ApiGatewayRestApi }
+        StageName: "${self:custom.stage}"
+      DependsOn: [ Domain ]
+
+    BasePathMapping:
+      Type: AWS::ApiGateway::BasePathMapping
+      Properties:
+        DomainName: { Fn::FindInMap : [ Domains, "${self:custom.stage}", "domain" ] }
+        RestApiId: { Ref: ApiGatewayRestApi }
+        Stage: "${self:custom.stage}"
+      DependsOn: ApiGatewayDeployment
+
+    # -------------------------------------------------------
+
+    # Role for Lambdas
+    Role:
+      Description: "Role [${self:provider.stackName}]"
+      Type: "AWS::IAM::Role"
+      Properties:
+        ManagedPolicyArns: [ Ref: Policy ]
+        RoleName: "${self:provider.stackName}"
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ "lambda.amazonaws.com" ]
+            Action: [ "sts:AssumeRole" ]
+
+    Policy:
+      Description: "Policy [${self:provider.stackName}]"
+      Type: "AWS::IAM::ManagedPolicy"
+      Properties:
+        ManagedPolicyName: ${self:provider.stackName}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: [ "arn:aws:logs:*:*:*" ]

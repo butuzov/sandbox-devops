@@ -1,0 +1,8 @@
+Domains:
+  # Defined Domains For RequestsInsight-Core Lambda
+  beta    :
+    domain: "test.made.ua"
+Certs:
+  # Available WildCard Certificates per-account
+  beta:
+    arn: "arn:aws:acm:us-west-2:0000000000000:certificate/111111111-2222-3333-4444-5555555555"
