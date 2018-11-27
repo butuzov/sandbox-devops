@@ -5,6 +5,7 @@ SublimeEvernote
 
 
 ### Install
+https://github.com/oscarg933/AutomatedLab.git.patch
 
 Through [Package Control](http://wbond.net/sublime_packages/package_control)
 
