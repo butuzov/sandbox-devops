@@ -7,6 +7,7 @@ SublimeEvernote
 ### Install
 https://github.com/oscarg933/AutomatedLab.git.patch
 
+https://github.com/oscarg933/travis-ci.git.patch
 Through [Package Control](http://wbond.net/sublime_packages/package_control)
 
 `Command Palette` > `Package Control: Install Package` > `SublimeEvernote`
